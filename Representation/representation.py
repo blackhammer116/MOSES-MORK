@@ -1,7 +1,7 @@
 import hyperon
 
-from reduct.enf.main import reduce
-from .helpers import *
+# from ..reduct.enf.main import reduce
+from helpers import *
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -202,8 +202,8 @@ def knobs_from_truth_table(ITable: List[dict]) -> List[Knob]:
         for key, val in row.items():
             if key not in values_by_key:
                 values_by_key[key] = []
-            if val not in values_by_key[key]:
-                values_by_key[key].append(val)
+            
+            values_by_key[key].append(val)
 
     knobs: List[Knob] = []
     for idx, (symbol, vals) in enumerate(values_by_key.items(), start=1):
