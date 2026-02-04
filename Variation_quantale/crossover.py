@@ -12,7 +12,6 @@ from Representation.helpers import tokenize
 from typing import Any, Set
 import random
 
-# random.seed(0)
 
 def get_top_level_features(s_expr_str):
     """
