@@ -1,3 +1,5 @@
+#Representation
+
 from hyperon import *
 
 # from ..reduct.enf.main import reduce
@@ -112,12 +114,20 @@ class Instance:
     score: float
     knobs: List[Knob]
 
+    def _get_complexity(self):
+        """Weakness implementation in a nutshell: count the number of tokens in the expression."""
+        clean = self.value.replace('(', ' ').replace(')', ' ')
+        tokens = [t for t in clean.split() if t.strip()]
+        return len(tokens)
+
 @dataclass
 class Hyperparams:
     mutation_rate: float
     crossover_rate: float
     num_generations: int
     neighborhood_size: int
+    bernoulli_prob: float = 0.5
+    uniform_prob: float = 0.5
 
 class Deme(Quantale):
     def __init__(self, instances: List[Instance], id: str, q_hyper: Hyperparams) -> None:
