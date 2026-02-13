@@ -5,11 +5,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Representation.representation import (Quantale, Instance,
                                            Deme, Hyperparams,
-                                           knobs_from_truth_table)
+                                           knobs_from_truth_table,
+                                           FitnessOracle)
 from Representation.csv_parser import load_truth_table
 from Representation.sampling import sample_from_TTable
 from Representation.helpers import tokenize, get_top_level_features
-from typing import Any, Set
+from typing import Any, Set, List, Dict, Tuple
 import random
 
 
@@ -125,6 +126,48 @@ class VariationQuantale(Quantale):
         )
         
         return child_instance
+    
+def crossTopOne(instances: List[Instance], stv_dict: Dict[str, Tuple[float, float]], target_vals: List[bool]) -> List[Instance]:
+    """
+    Selects the best scoring instance (Top One) and crosses it over with all other instances.
+    
+    Args:
+        instances: A list of Instance objects.
+        stv_dict: Dictionary containing STV values (Strength, Confidence) for features.
+        
+    Returns:
+        A list of new child Instance objects. Length = len(instances) - 1.
+    """
+    if len(instances) < 2:
+        return []
+
+    # 1. Identify the Top One
+    # Sort by score descending (Assuming Higher Score = Better Fitness)
+    # If your system uses Error (Lower = Better), remove 'reverse=True'
+    sorted_instances = sorted(instances, key=lambda x: x.score, reverse=True)
+    
+    top_parent = sorted_instances[0]
+    rest_population = sorted_instances[1:]
+    
+    children = []
+    fitness = FitnessOracle(target_vals)
+    print(f"\nTop Parent Selected for Crossover: {top_parent.value} | Score: {top_parent.score}")
+    # 2. Crossover Top One with everyone else
+    for spouse in rest_population:
+        # Initialize Crossover Quantale with Top Parent and the Spouse
+        vq = VariationQuantale(top_parent, spouse, stv_dict)
+        
+        # Generates a single child
+        child = vq.execute_crossover()
+        child.score = fitness.get_fitness(child)
+        
+        # Inherit parent score logic? Usually children need re-evaluation.
+        # But we can average parents for a temporary placeholder if needed.
+        # child.score = (top_parent.score + spouse.score) / 2 # Optional placeholder
+        
+        children.append(child)
+
+    return children
 
 
 # if __name__ == "__main__":
