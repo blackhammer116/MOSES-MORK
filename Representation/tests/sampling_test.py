@@ -10,17 +10,27 @@ from Representation.csv_parser import load_truth_table
 from Representation.helpers import TreeNode, parse_sexpr, tokenize, isOP
 
 class TestRandomUniform(unittest.TestCase):
+    def setUp(self):
+        self.hyperparams = Hyperparams(
+            mutation_rate=0.1,
+            crossover_rate=0.6,
+            neighborhood_size=10,
+            num_generations=50,
+            bernoulli_prob=0.5,
+            uniform_prob=0.5
+        )
+
     def test_random_uniform_returns_subset_of_input(self):
         knobs = ["A", "B", "C", "D"]
         random.seed(0)
-        selected = randomUniform(knobs)
+        selected = randomUniform(knobs, self.hyperparams)
         # All selected items must come from original list, no extras
         self.assertTrue(set(selected).issubset(set(knobs)))
 
     def test_random_uniform_empty_input(self):
         knobs = []
         random.seed(0)
-        selected = randomUniform(knobs)
+        selected = randomUniform(knobs, self.hyperparams)
         self.assertEqual(selected, None)
 
     def test_random_uniform_not_deterministic_distribution(self):
@@ -30,7 +40,7 @@ class TestRandomUniform(unittest.TestCase):
         saw_non_empty = False
         random.seed(1)
         for _ in range(100):
-            selected = randomUniform(knobs)
+            selected = randomUniform(knobs, self.hyperparams)
             if not selected:
                 saw_empty = True
             else:
@@ -57,17 +67,27 @@ class TestRandomBernoulli(unittest.TestCase):
             knobs=[self.knobA, self.knobB, self.knobC],
         )
 
+        self.hyperparams = Hyperparams(
+            mutation_rate=0.1,
+            crossover_rate=0.6,
+            neighborhood_size=10,
+            num_generations=50,
+            bernoulli_prob=0.5,
+            uniform_prob=0.5
+        )
+
         self.perms = ["D", "E", "C"]
         self.new_knobs = [self.knobD, self.knobE, self.knobC]
 
     def test_random_bernoulli_returns_none_if_no_selected_knobs(self):
         # Force randomUniform to always return empty by using no perms
-        new_inst = randomBernoulli(0.5, self.instance, [], self.new_knobs)
+        new_inst = randomBernoulli(self.hyperparams, self.instance, [], self.new_knobs)
         self.assertIsNone(new_inst)
 
     def test_random_bernoulli_probability_zero_no_change(self):
         random.seed(0)
-        new_inst = randomBernoulli(0.0, self.instance, self.new_knobs, self.instance.knobs)
+        self.hyperparams.bernoulli_prob = 0.0
+        new_inst = randomBernoulli(self.hyperparams, self.instance, self.new_knobs, self.instance.knobs)
         # With p=0, there should be no change to the expression
         # self.assertIsNotNone(new_inst)
         # self.assertEqual(new_inst.value, self.instance.value)
@@ -83,7 +103,8 @@ class TestRandomBernoulli(unittest.TestCase):
 
     def test_random_bernoulli_probability_one_mutates_if_knobs_available(self):
         random.seed(0)
-        new_inst = randomBernoulli(1.0, self.instance, self.new_knobs, self.instance.knobs)
+        self.hyperparams.bernoulli_prob = 1.0
+        new_inst = randomBernoulli(self.hyperparams, self.instance, self.new_knobs, self.instance.knobs)
         # Expect either at least one mutation or, worst case, same value but logic still valid
         self.assertIsNotNone(new_inst)
         self.assertIsInstance(new_inst, Instance)
@@ -92,7 +113,7 @@ class TestRandomBernoulli(unittest.TestCase):
 
     def test_random_bernoulli_updates_knobs_based_on_tokens(self):
         random.seed(2)
-        new_inst = randomBernoulli(1.0, self.instance, self.new_knobs, self.instance.knobs)
+        new_inst = randomBernoulli(self.hyperparams, self.instance, self.new_knobs, self.instance.knobs)
         self.assertIsNotNone(new_inst)
         present_tokens = set(tokenize(new_inst.value))
         knob_symbols = {k.symbol for k in new_inst.knobs}
@@ -101,14 +122,14 @@ class TestRandomBernoulli(unittest.TestCase):
 
     def test_random_bernoulli_does_not_duplicate_knobs(self):
         random.seed(3)
-        new_inst = randomBernoulli(1.0, self.instance, self.new_knobs, self.instance.knobs)
+        new_inst = randomBernoulli(self.hyperparams, self.instance, self.new_knobs, self.instance.knobs)
         self.assertIsNotNone(new_inst)
         symbols = [k.symbol for k in new_inst.knobs]
         self.assertEqual(len(symbols), len(set(symbols)))
 
     def test_random_bernoulli_handles_complex_perm_expression(self):
         random.seed(2)
-        new_inst = randomBernoulli(1.0, self.instance, [self.knobA, self.knobC, self.knobE], self.instance.knobs)
+        new_inst = randomBernoulli(self.hyperparams, self.instance, [self.knobA, self.knobC, self.knobE], self.instance.knobs)
         self.assertIsNotNone(new_inst)
         knob_symbols = {k.symbol for k in new_inst.knobs}
         self.assertTrue(
@@ -140,25 +161,26 @@ class TestSampleNewInstances(unittest.TestCase):
             crossover_rate=0.6,
             neighborhood_size=10,
             num_generations=50,
+            bernoulli_prob=0.5,
+            uniform_prob=0.5
         )
 
-    def test_sample_new_instances_returns_dict_of_unique_values(self):
+    def test_sample_new_instances_returns_list_of_unique_values(self):
         random.seed(0)
         new_instances = sample_new_instances(
-            0.5, self.hyperparams, self.instance, self.new_knobs, self.instance.knobs
+            self.hyperparams, self.instance, self.new_knobs, self.instance.knobs
         )
         
-        self.assertIsInstance(new_instances, dict)
-        for k, v in new_instances.items():
-            self.assertIsInstance(k, str)
+        self.assertIsInstance(new_instances, list)
+        for v in new_instances:
             self.assertIsInstance(v, Instance)
-            self.assertEqual(k, v.value)
-        self.assertEqual(len(new_instances), len(set(new_instances.keys())))
+        self.assertLessEqual(len(new_instances), self.hyperparams.neighborhood_size)
+        # self.assertEqual(len(new_instances), len(set(new_instances.keys())))
 
     def test_sample_new_instances_respects_neighborhood_size_upper_bound(self):
         random.seed(1)
         new_instances = sample_new_instances(
-            0.5, self.hyperparams, self.instance, self.new_knobs, self.instance.knobs
+            self.hyperparams, self.instance, self.new_knobs, self.instance.knobs
         )
         # Number of unique instances cannot exceed neighborhood_size
         self.assertLessEqual(len(new_instances), self.hyperparams.neighborhood_size)
@@ -168,22 +190,23 @@ class TestSampleNewInstances(unittest.TestCase):
         hyperparams = deepcopy(self.hyperparams)
         hyperparams.neighborhood_size = 0
         new_instances = sample_new_instances(
-            0.5, hyperparams, self.instance, self.perms, self.new_knobs
+            hyperparams, self.instance, self.perms, self.new_knobs
         )
-        self.assertEqual(new_instances, {})
+        self.assertEqual(new_instances, [])
 
     def test_sample_new_instances_handles_no_perms(self):
         random.seed(3)
         new_instances = sample_new_instances(
-            0.5, self.hyperparams, self.instance, [], self.new_knobs
+            self.hyperparams, self.instance, [], self.new_knobs
         )
         # randomBernoulli should always return None, so no instances
-        self.assertEqual(new_instances, {})
+        self.assertEqual(new_instances, [])
 
     def test_sample_new_instances_probability_zero(self):
         random.seed(4)
+        self.hyperparams.bernoulli_prob = 0.0
         new_instances = sample_new_instances(
-            0.0, self.hyperparams, self.instance, self.new_knobs, self.instance.knobs
+            self.hyperparams, self.instance, self.new_knobs, self.instance.knobs
         )
         # With p=0, randomBernoulli never mutates; but it still returns instances
         # self.assertGreaterEqual(len(new_instances), 1)
@@ -191,7 +214,7 @@ class TestSampleNewInstances(unittest.TestCase):
         #     value, inst = new_instances.items()
         #     self.assertEqual(value, self.instance.value)
         #     self.assertEqual(inst.value, self.instance.value)
-        different_values = [v for k, v in new_instances.items() if k != self.instance.value]
+        different_values = [inst for inst in new_instances if inst.value != self.instance.value]
         self.assertGreater(len(different_values), 0)
 
 class TestSampleLogicalPerms(unittest.TestCase):

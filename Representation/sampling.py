@@ -26,10 +26,8 @@ def sample_logical_perms(current_op: str, variables: List[Knob]) -> List[str]:
         return None, None
     
     candidates = []
-    # 1. Simple Variables
     candidates.extend([v.symbol for v in variables])
 
-    # 2. Complex Pairs
     # If current is AND, make OR pairs. If OR, make AND pairs.
     pair_op = "OR" if current_op == "AND" else "AND"
 
@@ -47,7 +45,7 @@ def sample_logical_perms(current_op: str, variables: List[Knob]) -> List[str]:
     
     return candidates, variables
 
-def randomUniform(knobs):
+def randomUniform(knobs, hyperparams: Hyperparams):
     """
     Perform uniform random sampling to select knobs.
     """
@@ -56,12 +54,12 @@ def randomUniform(knobs):
     
     selected_knobs = []
     for knob in knobs:
-        if random.random() > 0.5:
+        if random.random() > hyperparams.uniform_prob:
             selected_knobs.append(knob)
 
     return selected_knobs   
 
-def randomBernoulli(p: float, instance: Instance, features: List[Knob], knobs: List[Knob]) -> Instance:
+def randomBernoulli(hyperparams: Hyperparams, instance: Instance, features: List[Knob], knobs: List[Knob]) -> Instance:
     """
     Perform Bernoulli sampling to select a knob for replacement.
     
@@ -79,13 +77,14 @@ def randomBernoulli(p: float, instance: Instance, features: List[Knob], knobs: L
     op = sexp[1] if sexp else None
     root = parse_sexpr(sexp)
     perms, new_knobs = sample_logical_perms(op, features)
-    selected_knobs = randomUniform(perms)
+    selected_knobs = randomUniform(perms, hyperparams)
+
 
 
     if not selected_knobs:
         return
 
-    candidates = []
+    candidates = [[]]
     queue = [(root, [])]
     mutant_root = deepcopy(root)
 
@@ -124,7 +123,7 @@ def randomBernoulli(p: float, instance: Instance, features: List[Knob], knobs: L
                 valid_path = False
                 break
         
-        target_idx = path[-1]
+        target_idx = path[-1] if path else -1
         if not valid_path:
             continue  # Skip this mutation as the target no longer exists
         
@@ -133,26 +132,14 @@ def randomBernoulli(p: float, instance: Instance, features: List[Knob], knobs: L
             tokens[tokens.index("OR")] = "AND"
             symbol = " ".join(tokens).replace("( ", "(").replace(" )", ")")
 
-        elif len(tokens) > 1 and parent.label == "AND" and tokens[1] == "AND":
+        if len(tokens) > 1 and parent.label == "AND" and tokens[1] == "AND":
             tokens[tokens.index("AND")] = "OR"
             symbol = " ".join(tokens).replace("( ", "(").replace(" )", ")")
 
-        if random.random() > p:
-            if  target_idx >= len(parent.children): continue
 
-            if str(parent.children[target_idx]) == symbol: continue
-
-            is_sibling_duplicate = False
-            for i, child in enumerate(parent.children):
-                if i != target_idx and str(child) == symbol:
-                    is_sibling_duplicate = True
-                    break
-            
-            if is_sibling_duplicate: continue
-
-            parent.children[target_idx] = TreeNode(symbol)
-            selected_knobs.pop(0)
-        else:
+        rand = random.random()
+        # print("Random: ", rand, " Bernoulli Prob: ", hyperparams.bernoulli_prob)
+        if rand > hyperparams.bernoulli_prob:
             append_target = parent
             if append_target.label == "NOT":
                 if len(path) < 2:
@@ -181,7 +168,7 @@ def randomBernoulli(p: float, instance: Instance, features: List[Knob], knobs: L
             if not is_duplicate:
                 append_target.children.append(TreeNode(symbol))
                 selected_knobs.pop(0)
-        
+                
         mutant_value = str(mutant_root)
         if mutant_value == instanceExp:
             continue
@@ -205,7 +192,7 @@ def randomBernoulli(p: float, instance: Instance, features: List[Knob], knobs: L
     return new_inst
 
 
-def sample_new_instances(p: float, hyperparams: Hyperparams, instance: Instance, features: List, knobs: List[Knob]) -> Dict[str, Instance]:
+def sample_new_instances(hyperparams: Hyperparams, instance: Instance, features: List, knobs: List[Knob]) -> List[Instance]:
     """
     Sample new instances using Bernoulli sampling.
     
@@ -221,14 +208,84 @@ def sample_new_instances(p: float, hyperparams: Hyperparams, instance: Instance,
     new_instances = {}
     id_counter = 1
     for _ in range(hyperparams.neighborhood_size):
-        new_inst = randomBernoulli(p, instance, features, knobs)
+        new_inst = randomBernoulli(hyperparams, instance, features, knobs)
         if new_inst and new_inst.value not in new_instances:
             new_inst.id = instance.id + id_counter
             new_instances[new_inst.value] = new_inst
             id_counter += 1
     
-    return new_instances
+    return list(new_instances.values())
 
+def sample_from_deme(deme: Deme, hyperparams: Hyperparams, exemplar: Instance, global_knobs: List[Knob],
+                     features: List[Knob], csv_path: str, fitness: FitnessOracle, metta: MeTTa) -> Deme:
+    """
+    sample_from_deme: Samples new instances for a given deme using features 
+        extracted from a truth table CSV file.
+    Returns: A new deme with the sampled instances added.
+    """
+    if features:
+        features = extract_features(csv_path, output_col='O')
+        selected_features = random.sample(features, 1)
+        selected_knobs = [k for k in global_knobs if k.symbol in selected_features]
+    else: selected_knobs = features
+    # print("-"*100)
+    # print(selected_features)
+    new_instances = sample_new_instances(hyperparams, exemplar, selected_knobs, global_knobs)
+    new_instances = reduce_and_score(new_instances, fitness, metta)
+    deme.instances.extend(new_instances)
+
+    return deme
+
+def extract_features(csv_path: str, output_col: str = 'O'):
+    """
+    Extracts features from a truth table CSV file.
+    
+    Args:
+        csv_path (str): Path to the CSV file containing the truth table.
+        output_col (str): Name of the output/target column in the CSV.
+        
+    Returns:
+        A list of features.
+    """
+    order = feature_order(csv_path, output_col)
+    features = interaction_aware_mrmr(
+        csv_path=csv_path,
+        target_col=output_col,
+        k=5,
+        max_interaction_order=order,
+        output_type='subsets'
+    )
+    print("Features: ", features)
+    return features
+
+def reduce_and_score(instances: List[Instance], fitness: FitnessOracle, metta: MeTTa) -> List[Instance]:
+    """
+    Reduces the instances using MeTTa and scores them using the fitness oracle.
+    
+    Args:
+        instances (List[Instance]): List of instances to reduce and score.
+        fitness (FitnessOracle): The fitness oracle to evaluate the instances.
+        metta (MeTTa): The MeTTa interpreter for reduction.
+        
+    Returns:
+        A list of reduced and scored instances.
+    """
+    unique_instances = {}
+    for inst in instances:
+        reduced = reduce(metta, inst.value)
+        if isinstance(reduced, list) and len(reduced) > 0:
+            inst.value = str(reduced[0])
+        else:
+            inst.value = str(reduced)
+
+        present_tokens = set(tokenize(inst.value))
+        inst.knobs = [k for k in inst.knobs if k.symbol in present_tokens]
+
+        inst.score = fitness.get_fitness(inst)
+        if inst.value not in unique_instances:
+            unique_instances[inst.value] = inst
+            
+    return list(unique_instances.values())
 
 def sample_from_TTable(csv_path: str, hyperparams: Hyperparams, exemplar: Instance, knobs: List[Knob], target_vals: List[bool] ,output_col: str = 'O'):
     """
@@ -241,14 +298,7 @@ def sample_from_TTable(csv_path: str, hyperparams: Hyperparams, exemplar: Instan
     Returns:
         List[Deme]: A list of sampled demes.
     """
-    order = feature_order(csv_path, output_col)
-    features = interaction_aware_mrmr(
-        csv_path=csv_path,
-        target_col=output_col,
-        k=5,
-        max_interaction_order=order,
-        output_type='subsets'
-    )
+    features = extract_features(csv_path, output_col)
 
     demes = []
     metta = MeTTa()
@@ -256,24 +306,24 @@ def sample_from_TTable(csv_path: str, hyperparams: Hyperparams, exemplar: Instan
 
     for feat in features:
         selected_features = [k for k in knobs if k.symbol in (feat if isinstance(feat, (list, tuple)) else [feat])]
-        instances = sample_new_instances(0.2, hyperparams, exemplar, selected_features, exemplar.knobs)
-        unique_instances = {}
-        for inst in instances.values():
-            reduced = reduce(metta, inst.value)
-            # inst.value = reduced
-            if isinstance(reduced, list) and len(reduced) > 0:
-                inst.value = str(reduced[0])
-            else:
-                inst.value = str(reduced)
+        instances = sample_new_instances(hyperparams, exemplar, selected_features, exemplar.knobs)
+        unique_instances = reduce_and_score(instances, fitness, metta)
+        # for inst in instances.values():
+        #     reduced = reduce(metta, inst.value)
+        #     # inst.value = reduced
+        #     if isinstance(reduced, list) and len(reduced) > 0:
+        #         inst.value = str(reduced[0])
+        #     else:
+        #         inst.value = str(reduced)
 
 
-            present_tokens = set(tokenize(inst.value))
-            inst.knobs = [k for k in inst.knobs if k.symbol in present_tokens]
+        #     present_tokens = set(tokenize(inst.value))
+        #     inst.knobs = [k for k in inst.knobs if k.symbol in present_tokens]
 
-            inst.score = fitness.get_fitness(inst)
-            if inst.value not in unique_instances:
-                unique_instances[inst.value] = inst
+        #     inst.score = fitness.get_fitness(inst)
+        #     if inst.value not in unique_instances:
+        #         unique_instances[inst.value] = inst
             
-        demes.append(Deme(instances=list(unique_instances.values()), id=(len(demes)), q_hyper=hyperparams))
+        demes.append(Deme(instances=list(unique_instances), id=(len(demes)), q_hyper=hyperparams))
         
     return demes
