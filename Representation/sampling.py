@@ -101,6 +101,10 @@ def randomBernoulli(hyperparams: Hyperparams, instance: Instance,
             candidates.append(entry)
             if not child.is_leaf():
                 queue.append((child, curr_node))
+    
+    # Handle empty tree
+    if not candidates and mutant_root.label in ["AND", "OR"]:
+        candidates.append((mutant_root, None, 0))
 
     new_inst = Instance(
         value=str(mutant_root),
