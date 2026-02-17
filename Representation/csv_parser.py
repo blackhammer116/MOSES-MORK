@@ -1,5 +1,4 @@
 import csv
-import io
 
 
 def load_truth_table(filepath, output_col='O'):
@@ -10,8 +9,12 @@ def load_truth_table(filepath, output_col='O'):
     Returns: A list of dictionaries, e.g., [{'A': True, 'B': False}, ...]
       and a list of target values for the output column e.g. [True, False, ...].
     """
+    # Precompute true values set for O(1) lookup
+    TRUE_VALUES = frozenset(['1', 'TRUE', 'T', 'YES'])
+    
     data_rows = []
     output_values = []    
+    
     try:
         with open(filepath, mode='r', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
@@ -19,14 +22,13 @@ def load_truth_table(filepath, output_col='O'):
             for row in reader:
                 clean_row = {}
                 for key, val in row.items():
-                    v = val.strip().upper()
-                    bool_val = v in ('1', 'TRUE', 'T', 'YES')
-
+                    bool_val = val.strip().upper() in TRUE_VALUES
+                    
                     if key == output_col:
                         output_values.append(bool_val)
                     else:
                         clean_row[key] = bool_val
-
+                
                 data_rows.append(clean_row)
                 
     except FileNotFoundError:
