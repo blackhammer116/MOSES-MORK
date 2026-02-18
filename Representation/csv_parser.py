@@ -37,4 +37,3 @@ def load_truth_table(filepath, output_col='O'):
         return [], []
 
     return data_rows, output_values
-

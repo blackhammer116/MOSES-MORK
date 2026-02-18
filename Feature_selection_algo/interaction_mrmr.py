@@ -78,6 +78,7 @@ def calculate_interaction_gain(
     relevance = calculate_conditional_mutual_information(
         candidate_features, selected_features, target
     )
+    print(f"Calculated relevance (conditional MI): {relevance}")
     
     # Redundancy: how much the candidate overlaps with selected features
     if selected_features and candidate_features:
@@ -93,6 +94,7 @@ def calculate_interaction_gain(
         redundancy /= len(selected_features)
     else:
         redundancy = 0.0
+    print(f"Relevance: {relevance}, Redundancy: {redundancy}, Interaction Gain: {relevance - redundancy}")
     
     return relevance - redundancy
 
@@ -288,7 +290,7 @@ def interaction_aware_mrmr(
 #             target_column, 
 #             k=5, 
 #             max_interaction_order=max_order,
-#             output_type='subsets'
+#             output_type='lists'
 #         )
         
 #         print(f"Selected Feature Set: {results}")
