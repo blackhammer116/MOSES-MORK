@@ -133,7 +133,7 @@ def interaction_aware_mrmr(
     Args:
         csv_path: Path to the CSV file.
         target_col: Name of the output/target column.
-        k: Optional  Number of feature subsets to select if not specified or None - automatically stops when cumulative gain no longer increases..
+        k: Optional  Number of feature subsets to select if not specified or None - automatically stops when cumulative gain no longer increases.
         max_interaction_order: Maximum size of feature combinations to consider (1=single, 2=pairs, etc.)
         output_type: Format of the return value. 
             'list': Returns List[Tuple[FrozenSet[str], float]] (default).
@@ -233,6 +233,11 @@ def interaction_aware_mrmr(
             # print(f"Stopping at cumulative gain: {cumulative_gain:.4f}")
             break
 
+        # Optional k-limit safeguard
+        if k is not None and len(selected) >= k:
+            # print(f"Reached k={k} selected subsets, stopping selection.")
+            break
+
         # Select best candidate
         selected.append((best_candidate, best_score))
         cumulative_gain += best_score
@@ -249,10 +254,7 @@ def interaction_aware_mrmr(
             if not cand.issubset(best_candidate)
             and not any(cand.issubset(sel[0]) for sel in selected)
         }
-
-        # Optional k-limit safeguard
-        if k is not None and len(selected) >= k:
-            break
+        
 
     # 6. Output formatting
     if output_type == 'set':
@@ -290,7 +292,7 @@ def interaction_aware_mrmr(
 #         results = interaction_aware_mrmr(
 #             csv_file, 
 #             target_column, 
-#             k=None, 
+#             k=0, 
 #             max_interaction_order=max_order,
 #             output_type='lists'
 #         )
