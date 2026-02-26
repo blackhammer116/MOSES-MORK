@@ -343,7 +343,7 @@ class FitnessOracle:
         
         self.memo[instance.value] = accuracy
         instance.score = accuracy
-        return accuracy, matches
+        return accuracy
 
     def _evaluate_expression(self, expr_str: str, inputs: dict[str, List[bool]], row_count: int) -> List[bool]:
         """
