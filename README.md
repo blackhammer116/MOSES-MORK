@@ -551,24 +551,24 @@ flowchart TD
 ### 15.3 Beta path (BP-guided variation inside deme)
 ```mermaid
 flowchart TD
-  A["run_variation(deme)"] --> B["Select top-k exemplars"]
-  B --> C["DependencyMiner.fit(values, weights)"]
-  C --> D["Get meaningful dependencies"]
-  D --> E["Build/update BetaFactorGraph rules"]
-  E --> F["Anchor prior from top rule"]
-  F --> G["Evidence propagation"]
-  G --> H["Compute stv_dict from node beliefs"]
+  A["variation step"] --> B["select top k exemplars"]
+  B --> C["fit DependencyMiner on values and weights"]
+  C --> D["get meaningful dependencies"]
+  D --> E["update BetaFactorGraph rules"]
+  E --> F["set prior from top rule"]
+  F --> G["run evidence propagation"]
+  G --> H["build stv dictionary from node beliefs"]
 
-  H --> I{"Enough neighbors for crossover?"}
-  I -->|yes| J["crossTopOne" -> "children"]
-  I -->|no| K["Skip crossover"]
+  H --> I{"crossover possible"}
+  I -->|yes| J["run crossTopOne and create children"]
+  I -->|no| K["skip crossover"]
 
-  J --> L["Mutation additive + multiplicative"]
+  J --> L["run mutation (additive and multiplicative)"]
   K --> L
 
-  L --> M["Reduce & score candidates"]
-  M --> N["Add unique candidates to deme"]
-  N --> O["Next generation / return updated deme"]
+  L --> M["reduce and score candidates"]
+  M --> N["add unique candidates to deme"]
+  N --> O["next generation or return"]
 ```
 
 ### 15.4 ENF reduction pipeline (reduct/enf)
