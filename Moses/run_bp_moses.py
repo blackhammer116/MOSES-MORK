@@ -74,15 +74,15 @@ def run_variation(deme, fitness, hyperparams, target, min_xover_neighbors=5):
         # Track existing values to prevent any duplicates
         existing_values = {inst.value for inst in deme.instances}
         new_candidates = []
-        raw_candidate_values = set()
+        unique_children_values = set()
 
         if len(deme.instances) >= min_xover_neighbors:
             raw_children = crossTopOne(selected_exemplars, stv_dict, target)
             for inst in raw_children:
                 inst.value = prune_duplicate_children(inst.value)
-                if inst.value not in existing_values and inst.value not in raw_candidate_values:
+                if inst.value not in existing_values and inst.value not in unique_children_values:
                     new_candidates.append(inst)
-                    raw_candidate_values.add(inst.value)
+                    unique_children_values.add(inst.value)
         else:
             print(f"Skipping crossover (neighborhood size {len(deme.instances)} < {min_xover_neighbors})")
 
@@ -92,16 +92,16 @@ def run_variation(deme, fitness, hyperparams, target, min_xover_neighbors=5):
         child1 = mutation.execute_additive()
         if isinstance(child1, Instance):
             child1.value = prune_duplicate_children(child1.value)
-            if child1.value not in existing_values and child1.value not in raw_candidate_values:
+            if child1.value not in existing_values and child1.value not in unique_children_values:
                 new_candidates.append(child1)
-                raw_candidate_values.add(child1.value)
+                unique_children_values.add(child1.value)
 
         child2 = mutation.execute_multiplicative()
         if isinstance(child2, Instance):
             child2.value = prune_duplicate_children(child2.value)
-            if child2.value not in existing_values and child2.value not in raw_candidate_values:
+            if child2.value not in existing_values and child2.value not in unique_children_values:
                 new_candidates.append(child2)
-                raw_candidate_values.add(child2.value)
+                unique_children_values.add(child2.value)
 
         reduced_candidates = reduce_and_score(new_candidates, fitness, metta)
         reduced_candidates = [inst for inst in reduced_candidates if inst.value not in existing_values]
