@@ -1,7 +1,7 @@
 
-## 8) Dependency mining
+## Dependency mining
 
-### 8.1 `DependencyMiner/miner.py`
+### `DependencyMiner/miner.py`
 
 This discovers correlated program parts (subtrees / sibling co-occurrences).
 
