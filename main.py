@@ -16,7 +16,7 @@ import datetime
 
 def run_moses(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperparams, 
               knobs: List[Knob], target: List[bool], csv_path: str, 
-              metapop: List[Instance], max_iter: int | None = None, fg_type: str | None = None) -> List[Instance]:
+              metapop: List[Instance], max_iter: 100, fg_type: str = "alpha") -> List[Instance]:
     """
     Unified entry point for running MOSES optimization.
     
@@ -186,7 +186,7 @@ def main():
         evidence_propagation_steps=20,
     )
     input, target = load_truth_table(csv_path, output_col='O')
-    knobs = knobs_from_truth_table(input, exclude=['O'])
+    knobs = knobs_from_truth_table(input, exclude='O')
     
 
     exemplar = Instance(value=f"(AND)", id=0, score=0.0, knobs=knobs)
