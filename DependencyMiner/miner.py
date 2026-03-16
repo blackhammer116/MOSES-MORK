@@ -112,9 +112,7 @@ class DependencyMiner:
 
     def _is_mineable_key(self, key):
         clean_key = key.strip()
-        if clean_key == "OR":
-            return True
-        if clean_key in {"AND", "NOT", "(AND)", "(OR)", "(NOT)"}:
+        if clean_key in {"AND", "OR", "(AND)", "(OR)"}:
             return False
         return is_valid_logic_expr(clean_key)
 
