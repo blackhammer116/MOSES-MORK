@@ -105,13 +105,9 @@ class VariationQuantale(Quantale):
         if self.m1.value.strip().startswith("(OR"):
             root_op = "OR"
 
-        if ordered_child_features:
-            child_value = f"({root_op} {' '.join(ordered_child_features)})"
-        else:
-            child_value = self.m1.value
-
-        if not is_valid_logic_expr(child_value):
-            child_value = self.m1.value
+        
+        child_value = f"({root_op} {' '.join(ordered_child_features)})"
+      
 
         pool_knobs = self.m1.knobs + self.m2.knobs
         unique_pool = {k.symbol: k for k in pool_knobs}

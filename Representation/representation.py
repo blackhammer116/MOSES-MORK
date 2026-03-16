@@ -159,26 +159,6 @@ class Deme(Quantale):
     def unit(self) -> Instance:
         pass
 
-    def construct(self) -> List[Instance]:
-        if self.generation == 0:
-            for instances in self.instances:
-                expr = instances.value
-                if "$" in expr:
-                    for knob in instances.knobs:
-                        expr = add_arg(expr, knob.symbol)
-                        instances.value = expr
-            
-            if len(self.instances) < self.q_hyper.initial_population_size:
-                parent = deepcopy(self.instances[0])
-                missing_instances = self.q_hyper.initial_population_size - len(self.instances)
-                for _ in range(missing_instances):
-                    new_instance = sample_random_instances(parent, self.q_hyper)
-                    self.instances.append(new_instance)
-            
-            # self.factor_graph = build_factor_graph_from_deme(self)
-        # TODO: have pattern miner to extract new dependencies between instances and update the factor graph
-        #  also include pln for actions like probabilistic inference over the factor graph.
-        return self.instances
     
     def to_tree(self):
         header = (

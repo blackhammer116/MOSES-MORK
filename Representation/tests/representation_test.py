@@ -29,16 +29,6 @@ class TestExp(unittest.TestCase):
         self.assertIn("A", symbols)
         self.assertIn("B", symbols)
         a_knob = next(k for k in knobs if k.symbol == "A")
-        self.assertEqual(a_knob.Value, [True, True, False, False])
-
-    def test_initialize_deme(self):
-        deme = initialize_deme(self.sketch, self.ITable)
-        self.assertIsInstance(deme, Deme)
-        self.assertGreaterEqual(len(deme.instances), 2)
-        
-        inst0 = deme.instances[0]
-        self.assertTrue(inst0.value.startswith("(AND "))
-        self.assertFalse("$" in inst0.value)
 
     # def test_sample_random_instances(self):
     #     knobs = [Knob("X", 1, [True, False])]

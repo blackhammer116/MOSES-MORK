@@ -154,10 +154,8 @@ class Mutation(Quantale):
             mutated_feat = self._mutate_expression(feat)
             new_features.append(mutated_feat)
 
-        if not new_features:
-            instance_exp = self.instance_value
-        else:
-            instance_exp = f"({self.base_op} {' '.join(new_features)})"
+        
+        instance_exp = f"({self.base_op} {' '.join(new_features)})"
 
         if not is_valid_logic_expr(instance_exp):
             instance_exp = self.instance_value
