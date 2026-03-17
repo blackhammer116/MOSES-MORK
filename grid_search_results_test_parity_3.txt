@@ -1,0 +1,42 @@
+--- Starting Grid Search on example_data/test_parity_3.csv at 20260317_104217 ---
+
+Bernoulli  | Uniform    | Score      | Top Instance
+--------------------------------------------------------------------------------
+0.5        | 0.5        | 0.6250     | (AND A B C)
+0.5        | 0.6        | 0.6250     | (AND B (NOT A) (NOT C))
+0.5        | 0.7        | 0.7500     | (AND (OR (AND A) (AND (NOT C))) (OR (AND B) (AND C)) (OR (AND B) (AND (NOT C))) (OR (AND (NOT A)) (AND C)))
+0.5        | 0.8        | 0.7500     | (AND C (OR (AND (NOT A)) (AND B) (AND (NOT A) (NOT B))) (OR (AND A) (AND (NOT B))))
+0.6        | 0.5        | 0.7500     | (AND (OR (AND (NOT A)) (AND B)) (OR (AND (NOT A)) (AND C)) (OR (AND B) (AND C)))
+0.6        | 0.6        | 0.6250     | (AND B C A)
+0.6        | 0.7        | 0.7500     | (AND (OR (AND A) (AND C)) (OR (AND (NOT B)) (AND C)) (OR (AND (NOT B)) (AND (NOT C))) (OR (AND (NOT A)) (AND (NOT C))))
+0.6        | 0.8        | 0.7500     | (AND C (OR (AND (NOT A)) (AND B)) (OR (AND A) (AND (NOT B))))
+0.7        | 0.5        | 0.7500     | (AND A (OR (AND (NOT B)) (AND C)) (OR (AND B) (AND (NOT C))))
+0.7        | 0.6        | 0.7500     | (AND (OR (AND (NOT A)) (AND (NOT B)) (AND C)) (OR (AND B) (AND C)) (OR (AND (NOT B)) (AND (NOT C)) (AND A B)))
+0.7        | 0.7        | 0.7500     | (AND (OR (AND A) (AND (NOT B))) (OR (AND A) (AND C)) (OR (AND (NOT B)) (AND C)))
+0.7        | 0.8        | 0.7500     | (AND (OR (AND (NOT A)) (AND (NOT B))) (OR (AND (NOT A)) (AND (NOT C))) (OR (AND (NOT B)) (AND (NOT C))))
+0.8        | 0.5        | 0.7500     | (AND A (OR (AND (NOT B)) (AND C)) (OR (AND B) (AND (NOT C))))
+0.8        | 0.6        | 0.7500     | (AND (OR (AND (NOT A)) (AND (NOT C) (NOT B))) (OR (AND (NOT B)) (AND (NOT C)) (AND A B)))
+0.8        | 0.7        | 0.7500     | (AND C (OR (AND A) (AND (NOT B))) (OR (AND (NOT A)) (AND B)))
+0.8        | 0.8        | 0.8750     | (AND (OR (AND (NOT A) C) (AND (NOT C))) (OR (AND (NOT A)) (AND (NOT C) (NOT A)) (AND A (NOT B))) (OR (AND (NOT A)) (AND (NOT C)) (AND A)) (OR (AND (NOT B) (OR (AND A) (AND C))) (AND (NOT C) B) (AND A (NOT B))))
+
+================================================================================
+FINAL SUMMARY (Sorted by Score descending)
+================================================================================
+Score: 0.8750 | B=0.8, U=0.8 | Inst: (AND (OR (AND (NOT A) C) (AND (NOT C))) (OR (AND (NOT A)) (AND (NOT C) (NOT A)) (AND A (NOT B))) (OR (AND (NOT A)) (AND (NOT C)) (AND A)) (OR (AND (NOT B) (OR (AND A) (AND C))) (AND (NOT C) B) (AND A (NOT B))))
+Score: 0.7500 | B=0.5, U=0.7 | Inst: (AND (OR (AND A) (AND (NOT C))) (OR (AND B) (AND C)) (OR (AND B) (AND (NOT C))) (OR (AND (NOT A)) (AND C)))
+Score: 0.7500 | B=0.5, U=0.8 | Inst: (AND C (OR (AND (NOT A)) (AND B) (AND (NOT A) (NOT B))) (OR (AND A) (AND (NOT B))))
+Score: 0.7500 | B=0.6, U=0.5 | Inst: (AND (OR (AND (NOT A)) (AND B)) (OR (AND (NOT A)) (AND C)) (OR (AND B) (AND C)))
+Score: 0.7500 | B=0.6, U=0.7 | Inst: (AND (OR (AND A) (AND C)) (OR (AND (NOT B)) (AND C)) (OR (AND (NOT B)) (AND (NOT C))) (OR (AND (NOT A)) (AND (NOT C))))
+Score: 0.7500 | B=0.6, U=0.8 | Inst: (AND C (OR (AND (NOT A)) (AND B)) (OR (AND A) (AND (NOT B))))
+Score: 0.7500 | B=0.7, U=0.5 | Inst: (AND A (OR (AND (NOT B)) (AND C)) (OR (AND B) (AND (NOT C))))
+Score: 0.7500 | B=0.7, U=0.6 | Inst: (AND (OR (AND (NOT A)) (AND (NOT B)) (AND C)) (OR (AND B) (AND C)) (OR (AND (NOT B)) (AND (NOT C)) (AND A B)))
+Score: 0.7500 | B=0.7, U=0.7 | Inst: (AND (OR (AND A) (AND (NOT B))) (OR (AND A) (AND C)) (OR (AND (NOT B)) (AND C)))
+Score: 0.7500 | B=0.7, U=0.8 | Inst: (AND (OR (AND (NOT A)) (AND (NOT B))) (OR (AND (NOT A)) (AND (NOT C))) (OR (AND (NOT B)) (AND (NOT C))))
+Score: 0.7500 | B=0.8, U=0.5 | Inst: (AND A (OR (AND (NOT B)) (AND C)) (OR (AND B) (AND (NOT C))))
+Score: 0.7500 | B=0.8, U=0.6 | Inst: (AND (OR (AND (NOT A)) (AND (NOT C) (NOT B))) (OR (AND (NOT B)) (AND (NOT C)) (AND A B)))
+Score: 0.7500 | B=0.8, U=0.7 | Inst: (AND C (OR (AND A) (AND (NOT B))) (OR (AND (NOT A)) (AND B)))
+Score: 0.6250 | B=0.5, U=0.5 | Inst: (AND A B C)
+Score: 0.6250 | B=0.5, U=0.6 | Inst: (AND B (NOT A) (NOT C))
+Score: 0.6250 | B=0.6, U=0.6 | Inst: (AND B C A)
+
+*** Best Configuration: B=0.8, U=0.8 with Score 0.8750 ***

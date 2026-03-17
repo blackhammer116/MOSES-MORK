@@ -10,6 +10,7 @@ from FactorGraph_EDA.beta_bp import BetaFactorGraph
 from Moses.run_bp_moses import run_bp_moses, _finalize_metapop
 from Moses.run_abp_moses import run_abp_moses
 import random
+import numpy as np
 import math
 from typing import List
 import datetime
@@ -77,7 +78,7 @@ def grid_search_tuning():
     
     
     random.seed(42)
-    csv_paths = ["example_data/test_parity_3.csv", "example_data/test_parity_4.csv"]
+    csv_paths = ["example_data/test_parity_3.csv", "example_data/test_parity_4.csv", "example_data/test_parity_5.csv"]
 
     for csv_path in csv_paths:
 
@@ -103,12 +104,19 @@ def grid_search_tuning():
                     print(f"\nTesting: Bernoulli={b}, Uniform={u}")
                     
                     current_hp = Hyperparams(
-                        mutation_rate=0.3, 
-                        crossover_rate=0.5, 
-                        num_generations=15,
+                        mutation_rate=0.3,
+                        crossover_rate=0.5,
+                        num_generations=30,
+                        max_iter=3,
                         neighborhood_size=20,
-                        bernoulli_prob=b, 
-                        uniform_prob=u
+                        fg_type="beta",
+                        bernoulli_prob=b,
+                        uniform_prob=u,
+                        initial_population_size=2,
+                        exemplar_selection_size=7,
+                        min_crossover_neighbors=5,
+                        evidence_propagation_steps=20,
+                        max_dist=20,
                     )
                     
                     exemplar = Instance(value=f"(AND)", id=0, score=0.0, knobs=knobs)
@@ -123,9 +131,9 @@ def grid_search_tuning():
                         knobs=knobs,
                         target=target, 
                         csv_path=csv_path, 
-                        metapop=metapop, 
-                        max_iter=5, 
-                        fg_type="beta"
+                        metapop=metapop,
+                        max_iter=current_hp.max_iter,
+                        fg_type=current_hp.fg_type,
                     )
                     
                     # Find best score in this run
@@ -164,15 +172,17 @@ def grid_search_tuning():
                 log_file.write(best_msg + "\n")
 
 def main(): 
-    random.seed(42)
+
+    # np.random.seed(42)
+    # random.seed(42)
     metapop = []
 
-    csv_path = "example_data/test_bin.csv"
+    csv_path = "example_data/test_parity_4.csv"
     hyperparams = Hyperparams(
         mutation_rate=0.3,
         crossover_rate=0.5,
         num_generations=30,
-        max_iter=300,
+        max_iter=100,
         neighborhood_size=20,
         fg_type="beta",
         bernoulli_prob=0.6,
@@ -208,5 +218,5 @@ def main():
     
     
 if __name__ == "__main__":
-    main()
-    # grid_search_tuning()
+    # main()
+    grid_search_tuning()
