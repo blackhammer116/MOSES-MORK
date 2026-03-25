@@ -78,18 +78,19 @@ def grid_search_tuning():
     
     
     random.seed(42)
-    csv_paths = ["example_data/test_parity_3.csv", "example_data/test_parity_4.csv", "example_data/test_parity_5.csv"]
+    csv_paths = ["example_data/test_parity_4.csv", "example_data/test_parity_5.csv"]
 
     for csv_path in csv_paths:
-
+        
+        feature_order = 4 if "parity_4" in csv_path else 5
         input_data, target = load_truth_table(csv_path, output_col='O')
         knobs = knobs_from_truth_table(input_data)
         knobs = [k for k in knobs if k.symbol != 'O']
         fitness = FitnessOracle(target)
 
         results = []
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_filename = f"grid_search_results_{csv_path[13:-4]}.txt"
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H")
+        log_filename = f"grid_search_results_{csv_path[13:-4]}_{timestamp}.txt"
 
         with open(log_filename, "w") as log_file:
             header = f"--- Starting Grid Search on {csv_path} at {timestamp} ---\n"
@@ -107,17 +108,17 @@ def grid_search_tuning():
                         mutation_rate=0.3,
                         crossover_rate=0.5,
                         num_generations=30,
-                        max_iter=3,
-                        neighborhood_size=20,
+                        max_iter=100,
+                        neighborhood_size=50,
                         fg_type="beta",
                         bernoulli_prob=b,
                         uniform_prob=u,
-                        feature_order=3,
+                        feature_order=feature_order,
                         initial_population_size=2,
                         exemplar_selection_size=7,
                         min_crossover_neighbors=5,
-                        evidence_propagation_steps=20,
-                        max_dist=20,
+                        evidence_propagation_steps=30,
+                        max_dist=50,
                     )
                     
                     exemplar = Instance(value=f"(AND)", id=0, score=0.0, knobs=knobs)
