@@ -173,20 +173,20 @@ def grid_search_tuning():
 
 def main(): 
 
-    # np.random.seed(42)
+    np.random.seed(42)
     # random.seed(42)
     metapop = []
 
-    csv_path = "example_data/test_parity_5.csv"
+    csv_path = "example_data/test_parity_4.csv"
     hyperparams = Hyperparams(
         mutation_rate=0.3,
         crossover_rate=0.5,
         num_generations=30,
-        max_iter=100,
+        max_iter=20,
         neighborhood_size=20,
         fg_type="beta",
         bernoulli_prob=0.6,
-        uniform_prob=0.8,
+        uniform_prob=0.6,
         initial_population_size=2,
         exemplar_selection_size=7,
         min_crossover_neighbors=5,
