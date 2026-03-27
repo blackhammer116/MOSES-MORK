@@ -12,7 +12,7 @@ from Variation_quantale.mutation import Mutation
 from FactorGraph_EDA.beta_bp import BetaFactorGraph
 from hyperon import MeTTa
 
-from ssm import *
+from Variation_quantale.ssm import *
 
 import random
 import math
@@ -35,8 +35,7 @@ def _finalize_metapop(metapop: List[Instance], fg_type=None) -> List[Instance]:
     return sorted_meta
 
 
-def run_variation(deme, fitness, hyperparams, metapop, target, bg, min_xover_neighbors=5):
-    # bg = BetaFactorGraph()
+def run_variation(deme, fitness, hyperparams, metapop, target, bg, use_ssm, min_xover_neighbors=5):
     metta = MeTTa()
     
     for generation in range(hyperparams.num_generations):
@@ -106,43 +105,41 @@ def run_variation(deme, fitness, hyperparams, metapop, target, bg, min_xover_nei
                 new_candidates.append(child2)
                 unique_children_values.add(child2.value)
         
-        # 1. Train the State Space on the top 10% of the Metapopulation
-        if len(metapop) > 0: # Ensure we have data to train on
-            ssm = StructuralStateSpace()
-            
-            # 1. Sort the metapopulation and grab the top 10%
-            def get_cpx(inst): return inst._get_complexity() if hasattr(inst, '_get_complexity') else 0
-            sorted_meta = sorted(metapop, key=lambda x: (-x.score, get_cpx(x)))
-            top_tier = sorted_meta[:max(5, len(sorted_meta)//10)]
-            top_tier.extend(selected_exemplars)
-            
-            for _ in range(hyperparams.num_generations//5):
-                ssm.fit(top_tier)
+        if use_ssm:
+            if len(metapop) > 0:
+                ssm = StructuralStateSpace()
+                
+                # 1. Sort the metapopulation and grab the top 10%
+                def get_cpx(inst): return inst._get_complexity() if hasattr(inst, '_get_complexity') else 0
+                sorted_meta = sorted(metapop, key=lambda x: (-x.score, get_cpx(x)))
+                top_tier = sorted_meta[:max(5, len(sorted_meta)//10)]
+                top_tier.extend(selected_exemplars)
+                
+                for _ in range(hyperparams.num_generations//5):
+                    ssm.fit(top_tier)
 
-                # 2. Generate a new Scaffold
-                new_scaffold = ssm.generate_scaffold()
+                    # 2. Generate a new Scaffold
+                    new_scaffold = ssm.generate_scaffold()
 
-                # 3. Fill the slots using the Factor Graph STVs (Fix: use stv_dict)
-                filler = TemplateQuantaleJoin(stv_dict)
-                smart_child_str = filler.execute(new_scaffold)
-                smart_child_str = prune_duplicate_children(smart_child_str)
+                    # 3. Fill the slots using the Factor Graph STVs (Fix: use stv_dict)
+                    filler = TemplateQuantaleJoin(stv_dict)
+                    smart_child_str = filler.execute(new_scaffold)
+                    smart_child_str = prune_duplicate_children(smart_child_str)
 
-                # 4. Convert to Instance and add to candidates
-                if smart_child_str not in existing_values and smart_child_str not in unique_children_values:
-                    # Inherit knobs from the deme's exemplar/first instance
-                    smart_inst = Instance(
-                        value=smart_child_str, 
-                        id=random.randint(10000, 99999),
-                        score=0.0, 
-                        knobs=deme.instances[0].knobs
-                    )
-                    new_candidates.append(smart_inst)
-                    unique_children_values.add(smart_child_str)
-                    # print(f"   [SSM] Hallucinated new structure: {smart_child_str}")
-        # Output becomes: "(AND F (OR C D) E)"
+                    # 4. Convert to Instance and add to candidates
+                    if smart_child_str not in existing_values and smart_child_str not in unique_children_values:
+                        # Inherit knobs from the deme's exemplar/first instance
+                        smart_inst = Instance(
+                            value=smart_child_str, 
+                            id=random.randint(10000, 99999),
+                            score=0.0, 
+                            knobs=deme.instances[0].knobs
+                        )
+                        new_candidates.append(smart_inst)
+                        unique_children_values.add(smart_child_str)
+                        # print(f"   [SSM] Hallucinated new structure: {smart_child_str}")
 
         # 4. Evaluate and add to frontier...
-
         reduced_candidates = reduce_and_score(new_candidates, fitness, metta)
         reduced_candidates = [inst for inst in reduced_candidates if inst.value not in existing_values]
         for inst in reduced_candidates:
@@ -155,7 +152,7 @@ def run_bp_moses(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperp
               target: List[bool], csv_path: str, metapop: List[Instance], bg: BetaFactorGraph=None,
               iteration: int = 1, max_iter: int = 30, 
               distance: int = 1, max_dist: int = 5, 
-              last_chance: bool = False, best_possible_score: float = 1.0) -> List[Instance]:
+              last_chance: bool = False, use_ssm=False, best_possible_score: float = 1.0) -> List[Instance]:
     
     if max_iter <= iteration:
         print("\nMax iterations limit reached...")
@@ -178,11 +175,11 @@ def run_bp_moses(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperp
             exemplar, fitness, hyperparams, target, csv_path, metapop, 
             iteration=iteration + 1, max_iter=max_iter, 
             distance=distance + 1, max_dist=max_dist, 
-            last_chance=False, best_possible_score=best_possible_score
+            last_chance=False, use_ssm=use_ssm, best_possible_score=best_possible_score
         )
     
     bg = BetaFactorGraph() if bg is None else bg
-    new_demes = [run_variation(deme, fitness, hyperparams, metapop, target, bg) for deme in demes]
+    new_demes = [run_variation(deme, fitness, hyperparams, metapop, target, bg, use_ssm) for deme in demes]
 
     print("Iteration: ", iteration)
     print("\n--- Top Instances from Each Deme ---")
@@ -234,7 +231,7 @@ def run_bp_moses(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperp
         next_exemplar, fitness, hyperparams, target, csv_path, metapop, bg,
         iteration=iteration + 1, max_iter=max_iter, 
         distance=next_distance, max_dist=max_dist, 
-        last_chance=next_last_chance, best_possible_score=best_possible_score
+        last_chance=next_last_chance, use_ssm=use_ssm, best_possible_score=best_possible_score
     )
 
 def run_bp_moses_sa(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperparams,

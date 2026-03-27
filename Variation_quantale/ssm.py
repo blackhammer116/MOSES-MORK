@@ -1,6 +1,9 @@
 import random
 import math
 from collections import defaultdict
+import itertools
+
+from Representation.representation import Instance
 
 class StructuralStateSpace:
     def __init__(self, max_depth=5):

@@ -11,7 +11,7 @@ from typing import List
 
 def run_moses(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperparams, 
               knobs: List[Knob], target: List[bool], csv_path: str, 
-              metapop: List[Instance], max_iter: int = 100, fg_type: str = "alpha") -> List[Instance]:
+              metapop: List[Instance], max_iter: int = 100, use_ssm=None, fg_type: str = "alpha") -> List[Instance]:
     """
     Unified entry point for running MOSES optimization.
     
@@ -43,6 +43,7 @@ def run_moses(exemplar: Instance, fitness: FitnessOracle, hyperparams: Hyperpara
             distance=1,
             max_dist=hyperparams.max_dist,
             last_chance=False,
+            use_ssm=use_ssm, 
             best_possible_score=1.0
         )
     elif fg_type.lower() == "alpha":
@@ -68,7 +69,7 @@ def main():
     # random.seed(42)
     metapop = []
 
-    csv_path = "example_data/test_parity_5.csv"
+    csv_path = "example_data/test_parity_4.csv"
     hyperparams = Hyperparams(
         mutation_rate=0.3,
         crossover_rate=0.5,
@@ -76,14 +77,14 @@ def main():
         max_iter=100,
         neighborhood_size=20,
         fg_type="beta",
-        bernoulli_prob=0.6,
+        bernoulli_prob=0.5,
         uniform_prob=0.6,
         initial_population_size=2,
         exemplar_selection_size=7,
         min_crossover_neighbors=5,
         evidence_propagation_steps=30,
         max_dist=50,
-        feature_order=5,
+        feature_order=4,
     )
     input, target = load_truth_table(csv_path, output_col='O')
     knobs = knobs_from_truth_table(input, exclude='O')
@@ -104,6 +105,7 @@ def main():
         csv_path=csv_path, 
         metapop=metapop,
         max_iter=hyperparams.max_iter,
+        use_ssm=True,
         fg_type=hyperparams.fg_type,
     )
     
